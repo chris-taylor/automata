@@ -73,7 +73,7 @@ lazyBuildStates (NFA delta s0 _) ts = go (Set.singleton s0') [s0']
 
         go seen []     = Set.toList seen
         go seen (s:ss) =
-            let move t     = setConcat (Set.map (\x -> delta x t) s)
+            let move t     = s `setBind` \x -> delta x t
                 newStates  = map move ts
                 newStates' = filter (\s -> not (Set.member s seen)) newStates
                 seen'      = Set.union (Set.fromList newStates) seen
