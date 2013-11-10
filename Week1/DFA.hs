@@ -43,33 +43,33 @@ observableStates dfa = nub . map (run dfa)
 
 -- |DFA that recognizes a string ending in "ing". The alphabet is the set of all lists of ASCII characters.
 data Ing_State = Start_Ing
-			   | Saw_I
-			   | Saw_IN
-			   | Saw_ING
-			   deriving (Show,Eq)
+               | Saw_I
+               | Saw_IN
+               | Saw_ING
+               deriving (Show,Eq)
 
 transition_Ing Start_Ing c = case c of
-	'i' -> Saw_I
-	_   -> Start_Ing
+    'i' -> Saw_I
+    _   -> Start_Ing
 
 transition_Ing Saw_I     c = case c of
-	'i' -> Saw_I
-	'n' -> Saw_IN
-	_   -> Start_Ing
+    'i' -> Saw_I
+    'n' -> Saw_IN
+    _   -> Start_Ing
 
 transition_Ing Saw_IN    c = case c of
-	'i' -> Saw_I
-	'g' -> Saw_ING
-	_   -> Start_Ing
+    'i' -> Saw_I
+    'g' -> Saw_ING
+    _   -> Start_Ing
 
 transition_Ing Saw_ING   c = case c of
-	'i' -> Saw_I
-	_   -> Start_Ing
+    'i' -> Saw_I
+    _   -> Start_Ing
 
 dfa_ing = DFA {
-	transitionFunction = transition_Ing,
-	startState = Start_Ing,
-	isFinal = (== Saw_ING)
+    transitionFunction = transition_Ing,
+    startState = Start_Ing,
+    isFinal = (== Saw_ING)
 }
 
 -- |DFA that recognizes strings that contain no consecutive 1s.
@@ -88,7 +88,7 @@ dfa_11 = DFA transition_11 A (\s -> s==A || s==B)
 data State_23 = State_23 Int deriving (Show)
 
 mk23 i | i >= 0 && i < 23 = State_23 i
-	   | otherwise        = error "i not in [0,23)"
+       | otherwise        = error "i not in [0,23)"
 
 transition_23 (State_23 i) '0' = mk23 $ rem (2 * i)     23
 transition_23 (State_23 i) '1' = mk23 $ rem (2 * i + 1) 23
