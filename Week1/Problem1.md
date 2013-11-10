@@ -1,8 +1,8 @@
-## Question
+### Question
 
 How many strings of length N are there in the language consisting of all strings of 0s and 1s that don't have two consecutive 1s?
 
-## Answer
+### Answer
 
 Let's count the strings of lengths 0, 1, 2, 3, 4...
 
