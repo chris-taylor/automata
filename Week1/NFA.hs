@@ -36,7 +36,7 @@ run (NFA delta s0 _) = go (Set.singleton s0)
 
 -- |Does an NFA accept an input string?
 isAccepted :: Ord s => NFA s t -> [t] -> Bool
-isAccepted nfa ts = Set.member True (Set.map (isFinal nfa) (run nfa ts))
+isAccepted nfa ts = setAny (isFinal nfa) (run nfa ts)
 
 -- |Generate all possible strings of length 'n' from a language.
 allWords :: Int -> [a] -> [[a]]
