@@ -59,11 +59,11 @@ languageC nfa alpha = filter (not . isAccepted nfa) (powerSet alpha)
 
 -- |Convert an NFA to an equivalent DFA using the subset construction.
 nfa2dfa :: Ord s => NFA s t -> DFA (Set s) t
-nfa2dfa (NFA deltaN s0 isFinalN) =
-    DFA deltaD (Set.singleton s0) isFinalD
+nfa2dfa (NFA delta s0 isFinal) =
+    DFA delta' (Set.singleton s0) isFinal'
   where
-    deltaD set t = setConcat $ Set.map (\s -> deltaN s t) set
-    isFinalD set = setAny isFinalN set
+    delta' set t = set `setBind` \s -> delta s t
+    isFinal' set = setAny isFinal set
 
 -- |Build the set of states necessary to represent an NFA as a DFA.
 lazyBuildStates :: (Ord s) => NFA s t -> [t] -> [Set s]
