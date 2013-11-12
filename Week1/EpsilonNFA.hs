@@ -3,9 +3,16 @@ module EpsilonNFA where
 
 import Data.Set (Set, member)
 import qualified Data.Set as Set
+import Data.IntMap ((!))
+import qualified Data.IntMap as IM
+import Control.Monad (filterM)
+
+
+import qualified DFA as DFA
+import qualified NFA as NFA
 
 setOr :: Set Bool -> Bool
-setOr = Set.foldr (&&) False
+setOr = Set.foldr (||) False
 
 setAny :: Ord a => (a -> Bool) -> Set a -> Bool
 setAny p = setOr . Set.map p
@@ -61,10 +68,66 @@ run nfa@(EpsNFA delta s0 _) = go (Set.singleton s0) . map T
     --     s' <- closure nfa s   // follow epsilon transitions
     --     go (delta s' t) ts    // continue
 
+-- |Is a string accepted by this epsilon-NFA?
+isAccepted :: (Ord s) => EpsNFA s t -> [t] -> Bool
+isAccepted nfa str = setAny (isFinal nfa) (run nfa str)
+
+-- |Generate all possible strings of length 'n' from a language.
+allWords :: Int -> [a] -> [[a]]
+allWords 0 alphabet = [[]]
+allWords n alphabet = [ x:xs | xs <- allWords (n-1) alphabet, x <- alphabet ]
+
+-- |Generate all possible strings from a language. This is simply the 'powerset' operator.
+powerSet :: [a] -> [[a]]
+powerSet alphabet = concat (map (\n -> allWords n alphabet) [0..])
+
+-- |Generate the language associated to a particular NFA for a given alphabet.
+language :: Ord s => EpsNFA s t -> [t] -> [[t]]
+language nfa alpha = filter (isAccepted nfa) (powerSet alpha)
+
+-- |Generate the strings that are *not* accepted by a particular NFA.
+languageC :: Ord s => EpsNFA s t -> [t] -> [[t]]
+languageC nfa alpha = filter (not . isAccepted nfa) (powerSet alpha)
+
+-- |Transform an epsilon-NFA into an NFA without epsilon transitions.
+enfa2nfa :: Ord s => EpsNFA s t -> NFA.NFA s t
+enfa2nfa enfa@(EpsNFA delta s0 isFinal) =
+    NFA.NFA delta' s0 isFinal'
+  where
+    delta' s t = closure enfa s >>- \x -> delta x (T t)
+    isFinal' s = setAny isFinal (closure enfa s)
 
 
 
 
+
+--------------
+-- Examples
+--------------
+
+enum = zip [0..]
+
+data WordState_ = Start
+                | Word Int DFA.WordState
+                deriving (Eq, Ord, Show)
+
+nfa_words :: [ String ] -> EpsNFA WordState_ Char
+nfa_words strs = EpsNFA f s0 isFinal
+  where
+
+    f  Start Epsilon = Set.fromList $ map (\(i,s) -> Word i (DFA.Seen 0)) (enum strs)
+    f  Start _       = Set.empty
+
+    f (Word _ _ ) Epsilon = Set.empty
+    f (Word i ws) (T t)   = Set.singleton $ Word i (DFA.delta (dfas!i) ws t)
+
+    s0 = Start
+    
+    isFinal  Start      = False
+    isFinal (Word i ws) = DFA.isFinal (dfas!i) ws
+
+    dfas :: IM.IntMap (DFA.DFA DFA.WordState Char)
+    dfas = IM.fromList . enum $ map DFA.dfa_word strs
 
 
 -- Might be a useful utility function?

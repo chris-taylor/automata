@@ -9,7 +9,7 @@ import DFA (DFA(DFA))
 import qualified DFA as DFA
 
 setOr :: Set Bool -> Bool
-setOr = Set.foldr (&&) False
+setOr = Set.foldr (||) False
 
 setAny :: Ord a => (a -> Bool) -> Set a -> Bool
 setAny p = setOr . Set.map p

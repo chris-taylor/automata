@@ -5,7 +5,7 @@ import Data.List (nub)
 
 -- |The DFA type. The type variable 's' represents the state type, and 't' represents the transition type.
 data DFA s t = DFA
-    { transitionFunction :: s -> t -> s
+    { delta :: s -> t -> s
     , startState :: s
     , isFinal :: s -> Bool }
 
@@ -42,34 +42,30 @@ observableStates dfa = nub . map (run dfa)
 --------------
 
 -- |DFA that recognizes a string ending in "ing". The alphabet is the set of all lists of ASCII characters.
-data Ing_State = Start_Ing
-               | Saw_I
-               | Saw_IN
-               | Saw_ING
-               deriving (Show,Eq)
+data Ing_State = Saw String deriving (Show,Eq)
 
-transition_Ing Start_Ing c = case c of
-    'i' -> Saw_I
-    _   -> Start_Ing
+transition_Ing (Saw "")    c = case c of
+    'i' -> Saw "i"
+    _   -> Saw ""
 
-transition_Ing Saw_I     c = case c of
-    'i' -> Saw_I
-    'n' -> Saw_IN
-    _   -> Start_Ing
+transition_Ing (Saw "i")   c = case c of
+    'i' -> Saw "i"
+    'n' -> Saw "in"
+    _   -> Saw ""
 
-transition_Ing Saw_IN    c = case c of
-    'i' -> Saw_I
-    'g' -> Saw_ING
-    _   -> Start_Ing
+transition_Ing (Saw "in")  c = case c of
+    'i' -> Saw ""
+    'g' -> Saw "ing"
+    _   -> Saw ""
 
-transition_Ing Saw_ING   c = case c of
-    'i' -> Saw_I
-    _   -> Start_Ing
+transition_Ing (Saw "ing") c = case c of
+    'i' -> Saw "i"
+    _   -> Saw ""
 
 dfa_ing = DFA {
-    transitionFunction = transition_Ing,
-    startState = Start_Ing,
-    isFinal = (== Saw_ING)
+    delta = transition_Ing,
+    startState = Saw "",
+    isFinal = (== Saw "ing")
 }
 
 -- |DFA that recognizes strings that contain no consecutive 1s.
@@ -94,4 +90,30 @@ transition_23 (State_23 i) '0' = mk23 $ rem (2 * i)     23
 transition_23 (State_23 i) '1' = mk23 $ rem (2 * i + 1) 23
 
 dfa_23 = DFA transition_23 (mk23 0) (\(State_23 i) -> i == 0)
+
+-------------------------
+-- Word-matching DFA
+-------------------------
+
+-- |States for the word-matching DFA.
+data WordState = Seen Int
+               | Fail
+               deriving (Eq, Ord, Show)
+
+-- |DFA to match a fixed word.
+dfa_word :: String -> DFA WordState Char
+dfa_word str = DFA delta s0 isFinal
+  where
+    delta = go
+    s0    = Seen 0
+    isFinal  Fail    = False
+    isFinal (Seen n) = n == length str
+
+    go  Fail    _ = Fail
+    go (Seen n) c = if n == length str
+        then Fail
+        else if c /= head (drop n str)
+            then Fail
+            else Seen (n+1)
+
 
